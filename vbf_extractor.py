@@ -230,12 +230,14 @@ class VBF:
         if version_start == -1:
             raise ValueError("Version tag not found")
 
-        config_end = data.find(b"}\x00")
+        config_end = self.find_config_tail(data)
+        if config_end == -1:
+            raise ValueError("Config end not found")
         binary_offset = config_end + 1
         config_binary = data[:binary_offset]
         partition_binary = data[binary_offset:]
-
-        self.config = parse_config_file(config_binary.decode())
+        config_str = config_binary.decode()
+        self.config = parse_config_file(config_str)
 
         self.version = self.config.get("vbf_version", "")
         self.sw_part = self.config.get("sw_part_number", "")
@@ -272,6 +274,26 @@ class VBF:
             binary_offset += 8+size+2
             if location != self.verification_block_start:
                 self.partitions.append((location, data, checksum))
+    
+    def find_config_tail(self, data: bytes):
+        start = 0x7b
+        end = 0x7d
+        level = 1
+        end_idx = -1
+        start_idx = data.find(start)
+        if start_idx == -1:
+            return -1
+        else:
+            for i in range(start_idx + 1, len(data)):
+                if data[i] == start:
+                    print(data[i:i+10])
+                    level += 1
+                elif data[i] == end:
+                    level -= 1
+                if level == 0:
+                    end_idx = i
+                    break
+        return end_idx
 
     def __str__(self):
         string = f"VBF v{self.version}\n"
