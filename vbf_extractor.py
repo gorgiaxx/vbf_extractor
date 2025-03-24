@@ -286,7 +286,6 @@ class VBF:
         else:
             for i in range(start_idx + 1, len(data)):
                 if data[i] == start:
-                    print(data[i:i+10])
                     level += 1
                 elif data[i] == end:
                     level -= 1
